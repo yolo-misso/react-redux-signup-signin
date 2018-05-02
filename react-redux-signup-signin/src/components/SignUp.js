@@ -1,79 +1,85 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import {
   Link,
   withRouter,
 } from 'react-router-dom';
-import {auth} from '../firebase';
-
+import { auth, db } from '../firebase';
 import * as routes from '../constants/routes';
 
-const SignUpPage = ({history})=>
+const SignUpPage = ({ history }) =>
 
   <div>
     <h1>SignUp</h1>
-    <SignUpForm history={history}/>
+    <SignUpForm history={history} />
   </div>
 
-  const INITIAL_STATE = {
-    username: '',
-    email: '',
-    passwordOne: '',
-    passwordTwo: '',
-    error: null,
-  };
+const INITIAL_STATE = {
+  username: '',
+  email: '',
+  passwordOne: '',
+  passwordTwo: '',
+  error: null,
+};
 
-  const byPropKey = (propertyName, value)=>()=>({
-    [propertyName]: value,
-  });
+const byPropKey = (propertyName, value) => () => ({
+  [propertyName]: value,
+});
 
-  class SignUpForm extends Component{
-    constructor(props){
-      super(props);
+class SignUpForm extends Component {
+  constructor(props) {
+    super(props);
 
-      this.state = {...INITIAL_STATE};
-    }
+    this.state = { ...INITIAL_STATE };
+  }
 
-    onSubmit = (event)=>{
-        const {
-          username,
-          email,
-          passwordOne,
-        } = this.state;
+  onSubmit = (event) => {
+    const {
+      username,
+      email,
+      passwordOne,
+    } = this.state;
 
-         const {
-           history,
-         }=this.props;
+    const {
+      history,
+    } = this.props;
 
-        auth.doCreateUserWithEmailAndPassword(email, passwordOne)
-        .then(authUser =>{
-          this.setState(()=>({...INITIAL_STATE}));
-          history.push(routes.HOME);
-        })
-        .catch(error=>{
-          this.setState(byPropKey('error', error));
-        });
-      event.preventDefault();
-    } 
+    auth.doCreateUserWithEmailAndPassword(email, passwordOne)
+      .then(authUser => {
+        // Create a user in your own accessible Firebase Database too
+        db.doCreateUser(authUser.uid, username, email)
+          .then(() => {
+            this.setState(() => ({ ...INITIAL_STATE }));
+            history.push(routes.HOME);
+          })
+          .catch(error => {
+            this.setState(byPropKey('error', error));
+          });
+      })
+      .catch(error => {
+        this.setState(byPropKey('error', error));
+      });
+    event.preventDefault();
+  }
 
-    render(){
-      const{
-        username,
-        email,
-        passwordOne,
-        passwordTwo,
-        error,
-      }=this.state;
+  render() {
+    const {
+      username,
+      email,
+      passwordOne,
+      passwordTwo,
+      error,
+    } = this.state;
 
-      const isInvalid = 
-        passwordOne !== passwordTwo ||
-        passwordOne === '' ||
-        email === '' ||
-        username === '';
+    const isInvalid =
+      passwordOne !== passwordTwo ||
+      passwordOne === '' ||
+      email === '' ||
+      username === '';
 
-      return(
-        <form onSubmit={this.onSubmit}>
-         {/*assigns the value on the text field to the state*/}
-          <input
+    return (
+      <form onSubmit={this.onSubmit}>
+        {/*assigns the value on the text field to the state*/}
+        <input
           value={username}
           onChange={event => this.setState(byPropKey('username', event.target.value))}
           type="text"
@@ -101,18 +107,18 @@ const SignUpPage = ({history})=>
           Sign Up
         </button>
 
-        { error && <p>{error.message}</p> }
-        </form>
-      );
-    }
+        {error && <p>{error.message}</p>}
+      </form>
+    );
   }
+}
 
-  const SignUpLink = ()=>
-    <p>
-      Don't have an account?
+const SignUpLink = () =>
+  <p>
+    Don't have an account?
       {' '}
-      <Link to={routes.SIGN_UP}>Sign Up</Link>
-    </p>
+    <Link to={routes.SIGN_UP}>Sign Up</Link>
+  </p>
 
 export default withRouter(SignUpPage);
 
