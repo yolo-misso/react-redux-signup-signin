@@ -16,7 +16,7 @@ import './App.css';
 const App = () =>
   <Router>
     <div>
-      <Navigation authUser={this.state.authUser} />
+      <Navigation/>
 
       <hr />
       {/*matches the route and displays the component on the same page*/}
